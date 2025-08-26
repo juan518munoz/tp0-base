@@ -16,6 +16,8 @@ services:
     container_name: server
     image: server:latest
     entrypoint: python3 /main.py
+    volumes:
+      - ./server:/config
     environment:
       - PYTHONUNBUFFERED=1
       - LOGGING_LEVEL=DEBUG
@@ -31,6 +33,8 @@ cat >> "$OUTPUT_FILE" <<EOL
     container_name: client$i
     image: client:latest
     entrypoint: /client
+    volumes:
+      - ./client:/config
     environment:
       - CLI_ID=$i
       - CLI_LOG_LEVEL=DEBUG
