@@ -2,6 +2,9 @@ import socket
 import logging
 import signal
 import sys
+import json
+
+from common.utils import recv_until_newline, Bet, store_bets
 
 class Server:
     def __init__(self, port, listen_backlog):
@@ -48,12 +51,19 @@ class Server:
         client socket will also be closed
         """
         try:
-            # TODO: Modify the receive to avoid short-reads
-            msg = client_sock.recv(1024).rstrip().decode('utf-8')
+            msg = recv_until_newline(client_sock)
             addr = client_sock.getpeername()
             logging.info(f'action: receive_message | result: success | ip: {addr[0]} | msg: {msg}')
+
+            # Parse msg as Bet - TODO: handle possible errors
+            bet = Bet.from_json(json.loads(msg))
+
+            # Store bet
+            store_bets([bet])
+            logging.info(f'action: apuesta_almacenada | result: success | dni: {bet.document} | numero: {bet.number}')
+
             # TODO: Modify the send to avoid short-writes
-            client_sock.send("{}\n".format(msg).encode('utf-8'))
+            client_sock.send("{}\n".format("OK").encode('utf-8'))
         except OSError as e:
             logging.error("action: receive_message | result: fail | error: {e}")
         finally:

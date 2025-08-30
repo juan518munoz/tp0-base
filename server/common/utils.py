@@ -24,6 +24,18 @@ class Bet:
         self.birthdate = datetime.date.fromisoformat(birthdate)
         self.number = int(number)
 
+    @classmethod
+    def from_json(cls, data: dict):
+        """Creates a Bet object from a JSON dictionary."""
+        return cls(
+            agency=data["agency"],
+            first_name=data["firstName"],
+            last_name=data["lastName"],
+            document=data["id"],
+            birthdate=data["birthdate"],
+            number=data["number"]
+        )
+
 """ Checks whether a bet won the prize or not. """
 def has_won(bet: Bet) -> bool:
     return bet.number == LOTTERY_WINNER_NUMBER
@@ -49,3 +61,18 @@ def load_bets() -> list[Bet]:
         for row in reader:
             yield Bet(row[0], row[1], row[2], row[3], row[4], row[5])
 
+"""
+Receive data from a socket until a newline character is found.
+Returns the received data as a UTF-8 string without the newline character.
+"""
+def recv_until_newline(sock):
+    buffer = b""
+    while True:
+        chunk = sock.recv(1024)
+        if not chunk:
+            # connection closed before newline
+            break
+        buffer += chunk
+        if b"\n" in buffer:
+            break
+    return buffer.decode("utf-8").rstrip("\n")

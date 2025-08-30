@@ -96,9 +96,9 @@ func PrintConfig(v *viper.Viper) {
 		v.GetInt("loop.amount"),
 		v.GetDuration("loop.period"),
 		v.GetString("log.level"),
-		v.GetString("bet.name"),
-		v.GetString("bet.surname"),
-		v.GetString("bet.id"),
+		v.GetString("bet.firstName"),
+		v.GetString("bet.lastName"),
+		v.GetString("bet.document"),
 		v.GetString("bet.birthdate"),
 		v.GetInt("bet.number"),
 	)
