@@ -61,7 +61,7 @@ func (c *Client) createClientSocket() error {
 
 // SendBet sends a bet to the server
 func (c *Client) SendBet() (string, error) {
-	serliazedBet, err := SerializeBet(c.bet, c.config.ID)
+	serializedBet, err := SerializeBet(c.bet, c.config.ID)
 	if err != nil {
 		return "", err
 	}
@@ -74,7 +74,7 @@ func (c *Client) SendBet() (string, error) {
 
 	// Send the bet to the server using flush to avoid short-write
 	writer := bufio.NewWriter(c.conn)
-	fmt.Fprintln(writer, serliazedBet)
+	fmt.Fprintln(writer, serializedBet)
 	writer.Flush()
 
 	// Listen for reply
