@@ -55,15 +55,17 @@ class Server:
             addr = client_sock.getpeername()
             logging.info(f'action: receive_message | result: success | ip: {addr[0]} | msg: {msg}')
 
-            # Parse msg as Bet - TODO: handle possible errors
-            bet = Bet.from_json(json.loads(msg))
+            try:
+                # Parse msg as Bet - TODO: handle possible errors
+                bet = Bet.from_json(json.loads(msg))
+                # Store bet
+                store_bets([bet])
+                logging.info(f'action: apuesta_almacenada | result: success | dni: {bet.document} | numero: {bet.number}')
+                client_sock.sendall("{}\n".format("OK").encode('utf-8'))
+            except:
+                logging.error(f"action: apuesta_almacenada | result: fail | error: invalid_bet | msg: {msg}")
+                client_sock.sendall("{}\n".format("FAIL").encode('utf-8'))
 
-            # Store bet
-            store_bets([bet])
-            logging.info(f'action: apuesta_almacenada | result: success | dni: {bet.document} | numero: {bet.number}')
-
-            # TODO: Modify the send to avoid short-writes
-            client_sock.send("{}\n".format("OK").encode('utf-8'))
         except OSError as e:
             logging.error("action: receive_message | result: fail | error: {e}")
         finally:
