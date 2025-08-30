@@ -40,6 +40,13 @@ func InitConfig() (*viper.Viper, error) {
 	v.BindEnv("loop", "amount")
 	v.BindEnv("log", "level")
 
+	// Added variables for bet details
+	v.BindEnv("bet", "Name")
+	v.BindEnv("bet", "Surname")
+	v.BindEnv("bet", "Id")
+	v.BindEnv("bet", "Birthdate")
+	v.BindEnv("bet", "Number")
+
 	// Try to read configuration from config file. If config file
 	// does not exists then ReadInConfig will fail but configuration
 	// can be loaded from the environment variables so we shouldn't
@@ -83,12 +90,17 @@ func InitLogger(logLevel string) error {
 // PrintConfig Print all the configuration parameters of the program.
 // For debugging purposes only
 func PrintConfig(v *viper.Viper) {
-	log.Infof("action: config | result: success | client_id: %s | server_address: %s | loop_amount: %v | loop_period: %v | log_level: %s",
+	log.Infof("action: config | result: success | client_id: %s | server_address: %s | loop_amount: %v | loop_period: %v | log_level: %s | bet_name: %s | bet_surname: %s | bet_id: %s | bet_birthdate: %s | bet_number: %v",
 		v.GetString("id"),
 		v.GetString("server.address"),
 		v.GetInt("loop.amount"),
 		v.GetDuration("loop.period"),
 		v.GetString("log.level"),
+		v.GetString("bet.name"),
+		v.GetString("bet.surname"),
+		v.GetString("bet.id"),
+		v.GetString("bet.birthdate"),
+		v.GetInt("bet.number"),
 	)
 }
 
@@ -111,8 +123,16 @@ func main() {
 		LoopAmount:    v.GetInt("loop.amount"),
 		LoopPeriod:    v.GetDuration("loop.period"),
 	}
+	
+	bet := common.Bet{
+		Name:      v.GetString("bet.name"),
+		Surname:   v.GetString("bet.surname"),
+		Id:        v.GetString("bet.id"),
+		Birthdate: v.GetString("bet.birthdate"),
+		Number:    uint(v.GetInt("bet.number")),
+	}
 
-	client := common.NewClient(clientConfig)
+	client := common.NewClient(clientConfig, bet)
 
 	// Setup signal for graceful shutdown
 	sigChan := make(chan os.Signal, 1)
@@ -122,7 +142,7 @@ func main() {
 	go client.StartClientLoop()
 
 	// Wait for termination signal
-	<- sigChan
+	<-sigChan
 
 	client.Stop()
 }

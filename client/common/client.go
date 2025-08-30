@@ -19,19 +19,30 @@ type ClientConfig struct {
 	LoopPeriod    time.Duration
 }
 
+// Bet struct that represents a bet
+type Bet struct {
+	Name      string
+	Surname   string
+	Id        string
+	Birthdate string
+	Number    uint
+}
+
 // Client Entity that encapsulates how
 type Client struct {
-	config ClientConfig
-	conn   net.Conn
+	config   ClientConfig
+	conn     net.Conn
 	shutdown chan struct{}
+	bet      Bet
 }
 
 // NewClient Initializes a new client receiving the configuration
 // as a parameter
-func NewClient(config ClientConfig) *Client {
+func NewClient(config ClientConfig, bet Bet) *Client {
 	client := &Client{
-		config: config,
+		config:   config,
 		shutdown: make(chan struct{}),
+		bet:      bet,
 	}
 	return client
 }
@@ -42,14 +53,39 @@ func NewClient(config ClientConfig) *Client {
 func (c *Client) createClientSocket() error {
 	conn, err := net.Dial("tcp", c.config.ServerAddress)
 	if err != nil {
-		log.Criticalf(
-			"action: connect | result: fail | client_id: %v | error: %v",
-			c.config.ID,
-			err,
-		)
+		return err
 	}
 	c.conn = conn
 	return nil
+}
+
+// SendBet sends a bet to the server
+func (c *Client) SendBet() (string, error) {
+	serliazedBet, err := SerializeBet(c.bet)
+	if err != nil {
+		return "", err
+	}
+
+	// Create the connection the server in every loop iteration. Send an
+	err = c.createClientSocket()
+	if err != nil {
+		return "", err
+	}
+
+	// Send the bet to the server using flush to avoid short-write
+	writer := bufio.NewWriter(c.conn)
+	fmt.Fprintln(writer, serliazedBet)
+	writer.Flush()
+
+	// Listen for reply
+	msg, err := bufio.NewReader(c.conn).ReadString('\n')
+	c.conn.Close()
+
+	if err != nil {
+		return "", err
+	}
+
+	return msg, nil
 }
 
 // StartClientLoop Send messages to the client until some time threshold is met
@@ -65,37 +101,25 @@ func (c *Client) StartClientLoop() {
 			// continue execution
 		}
 
-		// Create the connection the server in every loop iteration. Send an
-		c.createClientSocket()
-
-		// TODO: Modify the send to avoid short-write
-		fmt.Fprintf(
-			c.conn,
-			"[CLIENT %v] Message N°%v\n",
-			c.config.ID,
-			msgID,
-		)
-		msg, err := bufio.NewReader(c.conn).ReadString('\n')
-		c.conn.Close()
-
+		// Send the bet to the server
+		msg, err := c.SendBet()
 		if err != nil {
-			log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
+			log.Warningf("action: send_bet | result: in_progress | client_id: %v | error: %v",
 				c.config.ID,
 				err,
 			)
-			return
+			// Wait some time between retries
+			time.Sleep(c.config.LoopPeriod)
+			continue
 		}
 
-		log.Infof("action: receive_message | result: success | client_id: %v | msg: %v",
+		log.Infof("action: send_bet | result: success | client_id: %v | msg: %v",
 			c.config.ID,
 			msg,
 		)
-
-		// Wait a time between sending one message and the next one
-		time.Sleep(c.config.LoopPeriod)
-
+		return
 	}
-	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
+	log.Infof("action: send_bet | result: fail | client_id: %v", c.config.ID)
 }
 
 func (c *Client) Stop() {
