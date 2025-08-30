@@ -109,13 +109,13 @@ func (c *Client) StartClientLoop() {
 		// Send the bet to the server
 		err := c.SendBet()
 		if err != nil {
-			log.Warningf("action: send_bet | result: in_progress | client_id: %v | error: %v",
-				c.config.ID,
-				err,
-			)
+			// log.Warningf("action: send_bet | result: in_progress | client_id: %v | error: %v",
+			// 	c.config.ID,
+			// 	err,
+			// )
 			// Wait some time between retries
-			time.Sleep(c.config.LoopPeriod)
-			continue
+			// time.Sleep(c.config.LoopPeriod)
+			break // TODO: replace this with a `continue` to have retry logic
 		}
 
 		log.Infof("action: apuesta_enviada | result: success | dni: %v | numero: %v",
@@ -124,7 +124,10 @@ func (c *Client) StartClientLoop() {
 		)
 		return
 	}
-	log.Infof("action: send_bet | result: fail | client_id: %v", c.config.ID)
+	log.Infof("action: apuesta_enviada | result: fail | dni: %v | numero: %v",
+		c.bet.Document,
+		c.bet.Document,
+	)
 }
 
 func (c *Client) Stop() {
