@@ -99,7 +99,7 @@ func (c *Client) StartClientLoop() {
 }
 
 func (c *Client) Stop() {
-	log.Infof("action: stopping client | client_id: %v", c.config.ID)
+	log.Infof("action: stopping client | result: in_progress | client_id: %v", c.config.ID)
 
 	// Send stop signal to the client loop
 	close(c.shutdown)

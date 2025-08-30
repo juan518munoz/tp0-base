@@ -123,8 +123,6 @@ func main() {
 
 	// Wait for termination signal
 	<- sigChan
-	log.Info("Received termination signal, shutting down gracefully...")
 
 	client.Stop()
-	log.Info("Client shutdown complete")
 }

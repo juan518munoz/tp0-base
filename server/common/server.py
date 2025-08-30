@@ -1,6 +1,7 @@
 import socket
 import logging
-
+import signal
+import sys
 
 class Server:
     def __init__(self, port, listen_backlog):
@@ -8,6 +9,16 @@ class Server:
         self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
+        # Set timeout to allow graceful shutdown
+        self._server_socket.settimeout(1.0)
+        # Setup bellow is used to control server loop
+        self._running = True
+        signal.signal(signal.SIGINT, self._signal_handler)
+        signal.signal(signal.SIGTERM, self._signal_handler)
+
+    def _signal_handler(self, signum, frame):
+        logging.info(f"action: received_signal | result: in_progress | signal: {signum}")
+        self._running = False
 
     def run(self):
         """
@@ -18,11 +29,16 @@ class Server:
         finishes, servers starts to accept new connections again
         """
 
-        # TODO: Modify this program to handle signal to graceful shutdown
-        # the server
-        while True:
-            client_sock = self.__accept_new_connection()
-            self.__handle_client_connection(client_sock)
+        try:
+            while self._running:
+                try:
+                    client_sock = self.__accept_new_connection()
+                    self.__handle_client_connection(client_sock)
+                except socket.timeout:
+                    continue
+        finally:
+            self._server_socket.close()
+            logging.info("action: server_shutdown | result: success")
 
     def __handle_client_connection(self, client_sock):
         """
