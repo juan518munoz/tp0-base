@@ -20,7 +20,6 @@ services:
       - ./server:/config
     environment:
       - PYTHONUNBUFFERED=1
-      - LOGGING_LEVEL=DEBUG
     networks:
       - testing_net
 EOL
@@ -37,7 +36,6 @@ cat >> "$OUTPUT_FILE" <<EOL
       - ./client:/config
     environment:
       - CLI_ID=$i
-      - CLI_LOG_LEVEL=DEBUG
     networks:
       - testing_net
     depends_on:
