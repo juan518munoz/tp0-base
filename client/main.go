@@ -123,11 +123,11 @@ func main() {
 		LoopAmount:    v.GetInt("loop.amount"),
 		LoopPeriod:    v.GetDuration("loop.period"),
 	}
-	
+
 	bet := common.Bet{
-		Name:      v.GetString("bet.name"),
-		Surname:   v.GetString("bet.surname"),
-		Id:        v.GetString("bet.id"),
+		FirstName: v.GetString("bet.firstName"),
+		LastName:  v.GetString("bet.lastName"),
+		Document:  v.GetString("bet.document"),
 		Birthdate: v.GetString("bet.birthdate"),
 		Number:    uint(v.GetInt("bet.number")),
 	}

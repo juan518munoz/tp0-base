@@ -9,8 +9,8 @@ log:
 batch:
   maxAmount: 10
 bet:
-  name: "Santiago Lionel"
-  surname: "Lorca"
-  id: 12345678
+  firstName: "Santiago Lionel"
+  lastName: "Lorca"
+  document: 12345678
   birthdate: "1990-03-17"
   number: 7574

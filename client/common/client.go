@@ -21,9 +21,9 @@ type ClientConfig struct {
 
 // Bet struct that represents a bet
 type Bet struct {
-	Name      string
-	Surname   string
-	Id        string
+	FirstName string
+	LastName  string
+	Document  string
 	Birthdate string
 	Number    uint
 }
@@ -61,7 +61,7 @@ func (c *Client) createClientSocket() error {
 
 // SendBet sends a bet to the server
 func (c *Client) SendBet() (string, error) {
-	serliazedBet, err := SerializeBet(c.bet)
+	serliazedBet, err := SerializeBet(c.bet, c.config.ID)
 	if err != nil {
 		return "", err
 	}

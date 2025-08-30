@@ -6,11 +6,12 @@ import (
 
 // SerializeBet converts a Bet struct into a JSON string
 // Returns the JSON string representation of the bet and an error if serialization fails
-func SerializeBet(b Bet) (string, error) {
+func SerializeBet(b Bet, agency string) (string, error) {
 	betMap := map[string]interface{}{
-		"name":      b.Name,
-		"surname":   b.Surname,
-		"id":        b.Id,
+		"agency":    agency,
+		"firstName": b.FirstName,
+		"lastName":  b.LastName,
+		"id":        b.Document,
 		"birthdate": b.Birthdate,
 		"number":    b.Number,
 	}
