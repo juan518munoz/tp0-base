@@ -12,7 +12,7 @@ func SerializeBet(b Bet, agency string) (string, error) {
 		"agency":    agency,
 		"firstName": b.FirstName,
 		"lastName":  b.LastName,
-		"id":        b.Document,
+		"document":  b.Document,
 		"birthdate": b.Birthdate,
 		"number":    b.Number,
 	}

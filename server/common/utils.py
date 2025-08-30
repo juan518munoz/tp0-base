@@ -31,7 +31,7 @@ class Bet:
             agency=data["agency"],
             first_name=data["firstName"],
             last_name=data["lastName"],
-            document=data["id"],
+            document=data["document"],
             birthdate=data["birthdate"],
             number=data["number"]
         )
