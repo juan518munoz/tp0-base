@@ -60,16 +60,16 @@ func (c *Client) createClientSocket() error {
 }
 
 // SendBet sends a bet to the server
-func (c *Client) SendBet() (string, error) {
+func (c *Client) SendBet() error {
 	serializedBet, err := SerializeBet(c.bet, c.config.ID)
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	// Create the connection the server in every loop iteration. Send an
 	err = c.createClientSocket()
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	// Send the bet to the server using flush to avoid short-write
@@ -82,10 +82,15 @@ func (c *Client) SendBet() (string, error) {
 	c.conn.Close()
 
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	return msg, nil
+	err = ValidateServerResponse(msg)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // StartClientLoop Send messages to the client until some time threshold is met
@@ -102,7 +107,7 @@ func (c *Client) StartClientLoop() {
 		}
 
 		// Send the bet to the server
-		msg, err := c.SendBet()
+		err := c.SendBet()
 		if err != nil {
 			log.Warningf("action: send_bet | result: in_progress | client_id: %v | error: %v",
 				c.config.ID,
@@ -113,9 +118,9 @@ func (c *Client) StartClientLoop() {
 			continue
 		}
 
-		log.Infof("action: send_bet | result: success | client_id: %v | msg: %v",
-			c.config.ID,
-			msg,
+		log.Infof("action: apuesta_enviada | result: success | dni: %v | numero: %v",
+			c.bet.Document,
+			c.bet.Document,
 		)
 		return
 	}

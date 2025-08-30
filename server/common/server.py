@@ -43,6 +43,20 @@ class Server:
             self._server_socket.close()
             logging.info("action: server_shutdown | result: success")
 
+    def __send_client_success_message(self, client_sock):
+        """
+        Send a success message to the client socket
+        """
+        response = {"status": "OK"}
+        client_sock.sendall((json.dumps(response) + "\n").encode('utf-8'))
+
+    def __send_client_fail_message(self, client_sock, error_msg):
+        """
+        Send a fail message to the client socket
+        """
+        response = {"status": "FAIL", "error": error_msg}
+        client_sock.sendall((json.dumps(response) + "\n").encode('utf-8'))
+
     def __handle_client_connection(self, client_sock):
         """
         Read message from a specific client socket and closes the socket
@@ -61,10 +75,13 @@ class Server:
                 # Store bet
                 store_bets([bet])
                 logging.info(f'action: apuesta_almacenada | result: success | dni: {bet.document} | numero: {bet.number}')
-                client_sock.sendall("{}\n".format("OK").encode('utf-8'))
+
+                # Notify client that bet was stored successfully
+                self.__send_client_success_message(client_sock)
             except:
                 logging.error(f"action: apuesta_almacenada | result: fail | error: invalid_bet | msg: {msg}")
-                client_sock.sendall("{}\n".format("FAIL").encode('utf-8'))
+                # Notify client that bet submitted was invalid
+                self.__send_client_fail_message(client_sock, "invalid_bet")
 
         except OSError as e:
             logging.error("action: receive_message | result: fail | error: {e}")

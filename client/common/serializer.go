@@ -2,6 +2,7 @@ package common
 
 import (
 	"encoding/json"
+	"errors"
 )
 
 // SerializeBet converts a Bet struct into a JSON string
@@ -22,4 +23,23 @@ func SerializeBet(b Bet, agency string) (string, error) {
 	}
 
 	return string(jsonBytes), nil
+}
+
+// ValidateServerResponse parses a JSON string response from the server
+// returns true if the response indicates success, false otherwise
+func ValidateServerResponse(response string) error {
+	var parsedResponse map[string]interface{}
+	err := json.Unmarshal([]byte(response), &parsedResponse)
+	if err != nil {
+		return err
+	}
+
+	if parsedResponse["status"] != "OK" {
+		if reason, ok := parsedResponse["reason"].(string); ok {
+			return errors.New(reason)
+		}
+		return errors.New("unknown error")
+	}
+
+	return nil
 }
