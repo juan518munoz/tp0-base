@@ -2,19 +2,18 @@
 
 - Todo tipo de mensaje enviado entre las entidades es mediante TCP, lo que garantiza la entrega de los mensajes.
 - Los mensajes son en formato CSV.
-- Ambas entidades consideran un mensaje como "completo" cuando reciben un salto de línea (`\n`).
+- Los mensajes enviados por el cliente al servidor se consideran "completos" cuando se recibe un carácter nulo (`\0`).
+- Los mensajes enviados por el servidor al cliente se consideran "completos" cuando se recibe un salto de línea (`\n`).
 
 ## Formato mensaje de apuesta (de cliente a servidor)
+
 ```
-1,Santiago Lionel,Lorca,12345678,1990-03-17,7574/n
+1,3
+Santiago Lionel,Lorca,12345678,1990-03-17,7574
+Ana María,Gómez,23456789,1985-05-22,1234
+Carlos,Fernández,34567890,1992-11-09,5678\0
 ```
-Este formato CSV contiene los siguientes campos en orden:
-1. agency (ID de la agencia)
-2. firstName (Nombre)
-3. lastName (Apellido)
-4. document (DNI/ID)
-5. birthdate (Fecha de nacimiento en formato YYYY-MM-DD)
-6. number (Número de la apuesta)
+El formato comienza con el ID de la agencia y la cantidad de apuestas, seguido por cada apuesta en líneas separadas.
 
 ## Formato mensaje de respuesta (de servidor a cliente)
 ```

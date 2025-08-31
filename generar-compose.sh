@@ -37,6 +37,7 @@ cat >> "$OUTPUT_FILE" <<EOL
       - ./.data/agency-$i.csv:/data/agency.csv
     environment:
       - CLI_ID=$i
+      - CLI_BET_MAXAMOUNT=160
     networks:
       - testing_net
     depends_on:

@@ -4,7 +4,7 @@ import signal
 import sys
 import json
 
-from common.utils import recv_until_newline, Bet, store_bets
+from common.utils import parse_batch_bets, Bet, recv_until_null, store_bets
 
 class Server:
     def __init__(self, port, listen_backlog):
@@ -65,24 +65,24 @@ class Server:
         client socket will also be closed
         """
         try:
-            msg = recv_until_newline(client_sock)
+            batch_msg = recv_until_null(client_sock)
             addr = client_sock.getpeername()
-            logging.info(f'action: receive_message | result: success | ip: {addr[0]} | msg: {msg}')
+            logging.info(f'action: receive_message | result: success | ip: {addr[0]} | batch_msg: {batch_msg}')
 
+            bets = []
             try:
                 # Parse msg as Bet using CSV format
-                bet = Bet.from_csv(msg)
-                # Store bet
-                store_bets([bet])
-                logging.info(f'action: apuesta_almacenada | result: success | dni: {bet.document} | numero: {bet.number}')
+                bets = parse_batch_bets(batch_msg)
+                # Store bets
+                store_bets(bets)
+                logging.info(f'action: apuesta_recibida | result: success | cantidad: {len(bets)}')
 
                 # Notify client that bet was stored successfully
                 self.__send_client_success_message(client_sock)
             except:
-                logging.error(f"action: apuesta_almacenada | result: fail | error: invalid_bet | msg: {msg}")
-                # Notify client that bet submitted was invalid
-                self.__send_client_fail_message(client_sock, "invalid_bet")
-
+                logging.error(f"action: apuesta_recibida | result: fail | cantidad: {len(bets)}")
+                # Notify client that at least one of the bets submitted was invalid
+                self.__send_client_fail_message(client_sock, "invalid_bets_batch")
         except OSError as e:
             logging.error("action: receive_message | result: fail | error: {e}")
         finally:

@@ -17,10 +17,11 @@ var log = logging.MustGetLogger("log")
 
 // ClientConfig Configuration used by the client
 type ClientConfig struct {
-	ID            string
-	ServerAddress string
-	LoopAmount    int
-	LoopPeriod    time.Duration
+	ID             string
+	ServerAddress  string
+	LoopAmount     int
+	LoopPeriod     time.Duration
+	BatchMaxAmount int
 }
 
 // Bet struct that represents a bet
@@ -137,6 +138,48 @@ func LoadBetsFromCSV(filepath string) ([]Bet, error) {
 	return bets, nil
 }
 
+// SendBatchBets sends multiple bets to the server in a single batch
+func (c *Client) SendBatchBets(bets []Bet) error {
+	if len(bets) == 0 {
+		return nil // Nothing to send
+	}
+
+	serializedBatch, err := SerializeBatchBets(bets, c.config.ID)
+	if err != nil {
+		return err
+	}
+
+	// Create connection to the server
+	err = c.createClientSocket()
+	if err != nil {
+		return err
+	}
+
+	// Send the batch to the server using flush to avoid short-write
+	writer := bufio.NewWriter(c.conn)
+	_, err = writer.WriteString(serializedBatch)
+	if err != nil {
+		c.conn.Close()
+		return err
+	}
+	writer.Flush()
+
+	// Listen for reply
+	msg, err := bufio.NewReader(c.conn).ReadString('\n')
+	c.conn.Close()
+
+	if err != nil {
+		return err
+	}
+
+	err = ValidateServerResponse(msg)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // StartClientLoop Send messages to the client until some time threshold is met
 func (c *Client) StartClientLoop() {
 	bets, err := LoadBetsFromCSV("/data/agency.csv")
@@ -146,8 +189,10 @@ func (c *Client) StartClientLoop() {
 		return
 	}
 
-	for _, bet := range bets {
-		// Check if shutdown signal	has been received
+	// Process bets in batches
+	batchSize := c.config.BatchMaxAmount // TODO: Modify to be lower than 8KB
+	for i := 0; i < len(bets); i += batchSize {
+		// Check if shutdown signal has been received
 		select {
 		case <-c.shutdown:
 			return
@@ -155,19 +200,29 @@ func (c *Client) StartClientLoop() {
 			// continue execution
 		}
 
-		err = c.SendBet(bet)
+		// Calculate end index for current batch
+		end := i + batchSize
+		if end > len(bets) {
+			end = len(bets)
+		}
+
+		// Get current batch
+		currentBatch := bets[i:end]
+
+		// Send batch
+		err = c.SendBatchBets(currentBatch)
 		if err != nil {
-			log.Infof("action: apuesta_enviada | result: fail | dni: %v | numero: %v",
-				bet.Document,
-				bet.Number,
-			)
+			// TODO: log error for batch failure
 			continue
 		}
 
-		log.Infof("action: apuesta_enviada | result: success | dni: %v | numero: %v",
-			bet.Document,
-			bet.Number,
-		)
+		// Log success for each bet in batch
+		for _, bet := range currentBatch {
+			log.Infof("action: apuesta_enviada | result: success | dni: %v | numero: %v",
+				bet.Document,
+				bet.Number,
+			)
+		}
 	}
 
 	// TODO: remove log, not complaiant with requirements

@@ -7,10 +7,4 @@ loop:
 log:
   level: "INFO"
 batch:
-  maxAmount: 10
-bet:
-  firstName: "Santiago Lionel"
-  lastName: "Lorca"
-  document: 12345678
-  birthdate: "1990-03-17"
-  number: 7574
+  maxAmount: 160

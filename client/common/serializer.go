@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/csv"
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 )
@@ -35,6 +36,35 @@ func SerializeBet(b Bet, agency string) (string, error) {
 
 	csvStr := buf.String()
 	return csvStr, nil
+}
+
+// SerializeBatchBets converts a slice of Bet structs into the batch format
+// Format: "agency,count\n" followed by bet lines
+// Returns the serialized batch string and an error if serialization fails
+func SerializeBatchBets(bets []Bet, agency string) (string, error) {
+	if len(bets) == 0 {
+		return "", errors.New("cannot serialize empty batch")
+	}
+
+	var buf bytes.Buffer
+
+	// Write header line with agency ID and bet count
+	header := fmt.Sprintf("%s,%d\n", agency, len(bets))
+	buf.WriteString(header)
+
+	// Write each bet in the format: "FirstName,LastName,Document,Birthdate,Number\n"
+	for _, bet := range bets {
+		betLine := fmt.Sprintf("%s,%s,%s,%s,%d\n",
+			bet.FirstName,
+			bet.LastName,
+			bet.Document,
+			bet.Birthdate,
+			bet.Number)
+		buf.WriteString(betLine)
+	}
+
+	buf.WriteByte(0) // Null byte to indicate end of batch
+	return buf.String(), nil
 }
 
 // ValidateServerResponse parses a CSV string response from the server
