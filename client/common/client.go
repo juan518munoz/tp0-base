@@ -216,13 +216,7 @@ func (c *Client) StartClientLoop() {
 			continue
 		}
 
-		// Log success for each bet in batch
-		for _, bet := range currentBatch {
-			log.Infof("action: apuesta_enviada | result: success | dni: %v | numero: %v",
-				bet.Document,
-				bet.Number,
-			)
-		}
+		log.Info("action: apuesta_enviada | result: success | cantidad: ", len(currentBatch))
 	}
 
 	// TODO: remove log, not complaiant with requirements
