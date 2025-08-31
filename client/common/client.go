@@ -62,40 +62,6 @@ func (c *Client) createClientSocket() error {
 	return nil
 }
 
-// SendBet sends a bet to the server
-func (c *Client) SendBet(bet Bet) error {
-	serializedBet, err := SerializeBet(bet, c.config.ID)
-	if err != nil {
-		return err
-	}
-
-	// Create the connection the server in every loop iteration. Send an
-	err = c.createClientSocket()
-	if err != nil {
-		return err
-	}
-
-	// Send the bet to the server using flush to avoid short-write
-	writer := bufio.NewWriter(c.conn)
-	fmt.Fprintln(writer, serializedBet)
-	writer.Flush()
-
-	// Listen for reply
-	msg, err := bufio.NewReader(c.conn).ReadString('\n')
-	c.conn.Close()
-
-	if err != nil {
-		return err
-	}
-
-	err = ValidateServerResponse(msg)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 // LoadBetsFromCSV loads all bets from the CSV file
 func LoadBetsFromCSV(filepath string) ([]Bet, error) {
 	file, err := os.Open(filepath)
@@ -159,20 +125,18 @@ func (c *Client) SendBatchBets(bets []Bet) error {
 	writer := bufio.NewWriter(c.conn)
 	_, err = writer.WriteString(serializedBatch)
 	if err != nil {
-		c.conn.Close()
 		return err
 	}
 	writer.Flush()
 
 	// Listen for reply
 	msg, err := bufio.NewReader(c.conn).ReadString('\n')
-	c.conn.Close()
-
 	if err != nil {
 		return err
 	}
+	c.conn.Close()
 
-	err = ValidateServerResponse(msg)
+	err = ValidateBetsServerResponse(msg)
 	if err != nil {
 		return err
 	}
@@ -180,22 +144,19 @@ func (c *Client) SendBatchBets(bets []Bet) error {
 	return nil
 }
 
-// StartClientLoop Send messages to the client until some time threshold is met
-func (c *Client) StartClientLoop() {
+func SendBets(c *Client) error {
 	bets, err := LoadBetsFromCSV("/data/agency.csv")
-	log.Infof("loaded %d bets from CSV", len(bets))
 	if err != nil {
-		// TODO: log error
-		return
+		return err
 	}
 
 	// Process bets in batches
-	batchSize := c.config.BatchMaxAmount // TODO: Modify to be lower than 8KB
+	batchSize := c.config.BatchMaxAmount
 	for i := 0; i < len(bets); i += batchSize {
 		// Check if shutdown signal has been received
 		select {
 		case <-c.shutdown:
-			return
+			return nil
 		default:
 			// continue execution
 		}
@@ -212,12 +173,109 @@ func (c *Client) StartClientLoop() {
 		// Send batch
 		err = c.SendBatchBets(currentBatch)
 		if err != nil {
-			// TODO: log error for batch failure
-			continue
+			return err
 		}
 
 		log.Info("action: apuesta_enviada | result: success | cantidad: ", len(currentBatch))
 	}
+
+	return nil
+}
+
+func SendFinishedNotification(c *Client) error {
+	err := c.createClientSocket()
+	if err != nil {
+		return err
+	}
+
+	// Send the finished notification to the server using flush to avoid short-write
+	writer := bufio.NewWriter(c.conn)
+	fmt.Fprintf(writer, "FINISHED,%s", c.config.ID)
+	writer.WriteByte(0) // Null byte to indicate end of message
+	writer.Flush()
+
+	// Listen for reply
+	msg, err := bufio.NewReader(c.conn).ReadString('\n')
+	c.conn.Close()
+	if err != nil {
+		return err
+	}
+
+	err = ValidateFinishedNotificationServerResponse(msg)
+	if err != nil {
+		return err
+	}
+
+	log.Info("action: notificacion_finalizacion | result: success")
+	return nil
+}
+
+func GetLotteryWinnners(c *Client) error {
+	for {
+		log.Info("action: consulta_ganadores | result: in_progress")
+
+		err := c.createClientSocket()
+		if err != nil {
+			return err
+		}
+
+		// Check if shutdown signal has been received
+		select {
+		case <-c.shutdown:
+			return nil
+		default:
+			// continue execution
+		}
+
+		writer := bufio.NewWriter(c.conn)
+		fmt.Fprintf(writer, "RESULTS,%s", c.config.ID)
+		writer.WriteByte(0) // Null byte to indicate end of message
+		writer.Flush()
+
+		// Listen for reply
+		msg, err := bufio.NewReader(c.conn).ReadString('\n')
+		c.conn.Close()
+		if err != nil {
+			return err
+		}
+
+		ready, results, err := GetResultsServerResponse(msg)
+		if err != nil {
+			return err
+		}
+
+		if ready {
+			log.Info("action: consulta_ganadores | result: success | cant_ganadores: ", results)
+			break
+		}
+
+		time.Sleep(2 * time.Second)
+	}
+
+	return nil
+}
+
+// StartClientLoop Send messages to the client until some time threshold is met
+func (c *Client) StartClientLoop() error {
+	err := SendBets(c)
+	if err != nil {
+		return err
+	}
+
+	err = SendFinishedNotification(c)
+	if err != nil {
+		return err
+	}
+
+	err = GetLotteryWinnners(c)
+	if err != nil {
+		return err
+	}
+
+	if c.conn != nil {
+		c.conn.Close()
+	}
+	return nil
 }
 
 func (c *Client) Stop() {

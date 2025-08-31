@@ -52,11 +52,11 @@ def parse_batch_bets(batch_string: str) -> list[Bet]:
     
     # Parse header line to get agency and count
     header = lines[0].split(',')
-    if len(header) != 2:
+    if len(header) != 3:
         raise ValueError("Invalid batch header format")
     
-    agency = header[0]
-    expected_count = int(header[1])
+    agency = header[1]
+    expected_count = int(header[2])
     
     # Check if we have the expected number of bet lines
     actual_count = len(lines) - 1  # Subtract 1 for the header line
