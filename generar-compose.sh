@@ -34,13 +34,9 @@ cat >> "$OUTPUT_FILE" <<EOL
     entrypoint: /client
     volumes:
       - ./client:/config
+      - ./.data/agency-$i.csv:/data/agency.csv
     environment:
       - CLI_ID=$i
-      - CLI_BET_FIRSTNAME=PEPE
-      - CLI_BET_LASTNAME=LOPEZ
-      - CLI_BET_DOCUMENT=12345678
-      - CLI_BET_BIRTHDATE=1990-03-17
-      - CLI_BET_NUMBER=7574
     networks:
       - testing_net
     depends_on:

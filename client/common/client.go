@@ -2,8 +2,12 @@ package common
 
 import (
 	"bufio"
+	"encoding/csv"
 	"fmt"
+	"io"
 	"net"
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/op/go-logging"
@@ -33,16 +37,14 @@ type Client struct {
 	config   ClientConfig
 	conn     net.Conn
 	shutdown chan struct{}
-	bet      Bet
 }
 
 // NewClient Initializes a new client receiving the configuration
 // as a parameter
-func NewClient(config ClientConfig, bet Bet) *Client {
+func NewClient(config ClientConfig) *Client {
 	client := &Client{
 		config:   config,
 		shutdown: make(chan struct{}),
-		bet:      bet,
 	}
 	return client
 }
@@ -60,8 +62,8 @@ func (c *Client) createClientSocket() error {
 }
 
 // SendBet sends a bet to the server
-func (c *Client) SendBet() error {
-	serializedBet, err := SerializeBet(c.bet, c.config.ID)
+func (c *Client) SendBet(bet Bet) error {
+	serializedBet, err := SerializeBet(bet, c.config.ID)
 	if err != nil {
 		return err
 	}
@@ -93,11 +95,58 @@ func (c *Client) SendBet() error {
 	return nil
 }
 
+// LoadBetsFromCSV loads all bets from the CSV file
+func LoadBetsFromCSV(filepath string) ([]Bet, error) {
+	file, err := os.Open(filepath)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	reader := csv.NewReader(file)
+	var bets []Bet
+	for {
+		record, err := reader.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+
+		// CSV format: FirstName,LastName,Document,Birthdate,Number
+		if len(record) < 5 {
+			return nil, fmt.Errorf("invalid CSV record: %v", record)
+		}
+
+		number, err := strconv.ParseUint(record[4], 10, 32)
+		if err != nil {
+			return nil, fmt.Errorf("invalid number in CSV: %s", record[4])
+		}
+
+		bet := Bet{
+			FirstName: record[0],
+			LastName:  record[1],
+			Document:  record[2],
+			Birthdate: record[3],
+			Number:    uint(number),
+		}
+		bets = append(bets, bet)
+	}
+
+	return bets, nil
+}
+
 // StartClientLoop Send messages to the client until some time threshold is met
 func (c *Client) StartClientLoop() {
-	// There is an autoincremental msgID to identify every message sent
-	// Messages if the message amount threshold has not been surpassed
-	for msgID := 1; msgID <= c.config.LoopAmount; msgID++ {
+	bets, err := LoadBetsFromCSV("/data/agency.csv")
+	log.Infof("loaded %d bets from CSV", len(bets))
+	if err != nil {
+		// TODO: log error
+		return
+	}
+
+	for _, bet := range bets {
 		// Check if shutdown signal	has been received
 		select {
 		case <-c.shutdown:
@@ -106,28 +155,23 @@ func (c *Client) StartClientLoop() {
 			// continue execution
 		}
 
-		// Send the bet to the server
-		err := c.SendBet()
+		err = c.SendBet(bet)
 		if err != nil {
-			// log.Warningf("action: send_bet | result: in_progress | client_id: %v | error: %v",
-			// 	c.config.ID,
-			// 	err,
-			// )
-			// Wait some time between retries
-			// time.Sleep(c.config.LoopPeriod)
-			break // TODO: replace this with a `continue` to have retry logic
+			log.Infof("action: apuesta_enviada | result: fail | dni: %v | numero: %v",
+				bet.Document,
+				bet.Number,
+			)
+			continue
 		}
 
 		log.Infof("action: apuesta_enviada | result: success | dni: %v | numero: %v",
-			c.bet.Document,
-			c.bet.Document,
+			bet.Document,
+			bet.Number,
 		)
-		return
 	}
-	log.Infof("action: apuesta_enviada | result: fail | dni: %v | numero: %v",
-		c.bet.Document,
-		c.bet.Document,
-	)
+
+	// TODO: remove log, not complaiant with requirements
+	log.Infof("action: stopping client | result: completed | client_id: %v", c.config.ID)
 }
 
 func (c *Client) Stop() {
