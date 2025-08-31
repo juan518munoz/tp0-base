@@ -3,9 +3,9 @@ package common
 import (
 	"bytes"
 	"encoding/csv"
-	"encoding/json"
 	"errors"
 	"strconv"
+	"strings"
 )
 
 // SerializeBet converts a Bet struct into a CSV string
@@ -37,20 +37,24 @@ func SerializeBet(b Bet, agency string) (string, error) {
 	return csvStr, nil
 }
 
-// ValidateServerResponse parses a JSON string response from the server
-// returns true if the response indicates success, false otherwise
+// ValidateServerResponse parses a CSV string response from the server
+// returns nil if the response indicates success, error otherwise
 func ValidateServerResponse(response string) error {
-	var parsedResponse map[string]interface{}
-	err := json.Unmarshal([]byte(response), &parsedResponse)
+	reader := csv.NewReader(strings.NewReader(response))
+	record, err := reader.Read()
 	if err != nil {
 		return err
 	}
 
-	if parsedResponse["status"] != "OK" {
-		if reason, ok := parsedResponse["reason"].(string); ok {
-			return errors.New(reason)
+	if len(record) < 1 {
+		return errors.New("invalid response from server")
+	}
+
+	if record[0] == "FAIL" {
+		if len(record) >= 2 {
+			return errors.New(record[1])
 		}
-		return errors.New("unknown error")
+		return errors.New("unknown error from server")
 	}
 
 	return nil

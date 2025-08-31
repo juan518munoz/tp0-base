@@ -45,17 +45,17 @@ class Server:
 
     def __send_client_success_message(self, client_sock):
         """
-        Send a success message to the client socket
+        Send a success message to the client socket using CSV format
         """
-        response = {"status": "OK"}
-        client_sock.sendall((json.dumps(response) + "\n").encode('utf-8'))
+        response = "OK"
+        client_sock.sendall((response + "\n").encode('utf-8'))
 
     def __send_client_fail_message(self, client_sock, error_msg):
         """
-        Send a fail message to the client socket
+        Send a fail message to the client socket using CSV format
         """
-        response = {"status": "FAIL", "error": error_msg}
-        client_sock.sendall((json.dumps(response) + "\n").encode('utf-8'))
+        response = f"FAIL,{error_msg}"
+        client_sock.sendall((response + "\n").encode('utf-8'))
 
     def __handle_client_connection(self, client_sock):
         """
