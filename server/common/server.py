@@ -70,8 +70,8 @@ class Server:
             logging.info(f'action: receive_message | result: success | ip: {addr[0]} | msg: {msg}')
 
             try:
-                # Parse msg as Bet - TODO: handle possible errors
-                bet = Bet.from_json(json.loads(msg))
+                # Parse msg as Bet using CSV format
+                bet = Bet.from_csv(msg)
                 # Store bet
                 store_bets([bet])
                 logging.info(f'action: apuesta_almacenada | result: success | dni: {bet.document} | numero: {bet.number}')

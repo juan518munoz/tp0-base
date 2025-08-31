@@ -1,28 +1,40 @@
 package common
 
 import (
+	"bytes"
+	"encoding/csv"
 	"encoding/json"
 	"errors"
+	"strconv"
 )
 
-// SerializeBet converts a Bet struct into a JSON string
-// Returns the JSON string representation of the bet and an error if serialization fails
+// SerializeBet converts a Bet struct into a CSV string
+// Returns the CSV string representation of the bet and an error if serialization fails
+// The returned string is finished with a newline character
 func SerializeBet(b Bet, agency string) (string, error) {
-	betMap := map[string]interface{}{
-		"agency":    agency,
-		"firstName": b.FirstName,
-		"lastName":  b.LastName,
-		"document":  b.Document,
-		"birthdate": b.Birthdate,
-		"number":    b.Number,
+	var buf bytes.Buffer
+	writer := csv.NewWriter(&buf)
+
+	// Create a row with all bet fields
+	row := []string{
+		agency,
+		b.FirstName,
+		b.LastName,
+		b.Document,
+		b.Birthdate,
+		strconv.FormatUint(uint64(b.Number), 10),
 	}
 
-	jsonBytes, err := json.Marshal(betMap)
-	if err != nil {
+	// Write the row to the CSV writer
+	if err := writer.Write(row); err != nil {
 		return "", err
 	}
 
-	return string(jsonBytes), nil
+	// Flush the writer to ensure all data is written to the buffer
+	writer.Flush()
+
+	csvStr := buf.String()
+	return csvStr, nil
 }
 
 // ValidateServerResponse parses a JSON string response from the server

@@ -23,18 +23,22 @@ class Bet:
         self.document = document
         self.birthdate = datetime.date.fromisoformat(birthdate)
         self.number = int(number)
-
+    
     @classmethod
-    def from_json(cls, data: dict):
-        """Creates a Bet object from a JSON dictionary."""
-        return cls(
-            agency=data["agency"],
-            first_name=data["firstName"],
-            last_name=data["lastName"],
-            document=data["document"],
-            birthdate=data["birthdate"],
-            number=data["number"]
-        )
+    def from_csv(cls, csv_string: str):
+        """Creates a Bet object from a CSV string."""
+        reader = csv.reader([csv_string])
+        for row in reader:
+            if len(row) < 6:
+                raise ValueError("Invalid CSV format for Bet")
+            return cls(
+                agency=row[0],
+                first_name=row[1],
+                last_name=row[2],
+                document=row[3],
+                birthdate=row[4],
+                number=row[5]
+            )
 
 """ Checks whether a bet won the prize or not. """
 def has_won(bet: Bet) -> bool:
