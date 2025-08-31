@@ -1,15 +1,13 @@
 import socket
 import logging
 import signal
-import sys
-import json
 
-from common.utils import has_won, load_bets, parse_batch_bets, Bet, recv_until_null, store_bets
+from common.utils import has_won, load_bets, parse_batch_bets, recv_until_null, store_bets
 
 AGENCY_COUNT = 5
 
 class Server:
-    def __init__(self, port, listen_backlog):
+    def __init__(self, port, listen_backlog, agency_count):
         # Initialize server socket
         self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._server_socket.bind(('', port))
@@ -20,6 +18,7 @@ class Server:
         self._running = True
         signal.signal(signal.SIGINT, self._signal_handler)
         signal.signal(signal.SIGTERM, self._signal_handler)
+        self.__agency_count = agency_count
         self._finished_agencies = []
 
     def _signal_handler(self, signum, frame):
@@ -145,7 +144,7 @@ class Server:
         the number of winning bets for the specified agency and sends the
         result back to the client.
         """
-        if len(self._finished_agencies) < AGENCY_COUNT:
+        if len(self._finished_agencies) < int(self.__agency_count):
             logging.error("action: consulta_ganadores | result: fail | error: agencias_no_finalizadas")
             self.__send_client_results_not_ready_message(client_sock)
             return

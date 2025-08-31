@@ -20,6 +20,7 @@ services:
       - ./server:/config
     environment:
       - PYTHONUNBUFFERED=1
+      - AGENCY_COUNT=$CLIENT_COUNT
     networks:
       - testing_net
 EOL
