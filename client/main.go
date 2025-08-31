@@ -122,10 +122,18 @@ func main() {
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
 	// Start client in a separate goroutine
-	go client.StartClientLoop()
+	completionChan := make(chan struct{})
+	go func() {
+		client.StartClientLoop()
+		close(completionChan)
+	}()
 
 	// Wait for termination signal
-	<-sigChan
+	select {
+	case <-sigChan:
+		client.Stop()
+	case <-completionChan:
+		// Client completed its work
+	}
 
-	client.Stop()
 }

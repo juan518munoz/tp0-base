@@ -218,9 +218,6 @@ func (c *Client) StartClientLoop() {
 
 		log.Info("action: apuesta_enviada | result: success | cantidad: ", len(currentBatch))
 	}
-
-	// TODO: remove log, not complaiant with requirements
-	log.Infof("action: stopping client | result: completed | client_id: %v", c.config.ID)
 }
 
 func (c *Client) Stop() {
