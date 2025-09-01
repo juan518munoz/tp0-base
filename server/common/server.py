@@ -18,8 +18,9 @@ class Server:
         self._running = True
         signal.signal(signal.SIGINT, self._signal_handler)
         signal.signal(signal.SIGTERM, self._signal_handler)
-        self.__agency_count = agency_count
+        self._agency_count = agency_count
         self._finished_agencies = []
+        self._lottery_done = False
 
     def _signal_handler(self, signum, frame):
         logging.info(f"action: received_signal | result: in_progress | signal: {signum}")
@@ -144,10 +145,14 @@ class Server:
         the number of winning bets for the specified agency and sends the
         result back to the client.
         """
-        if len(self._finished_agencies) < int(self.__agency_count):
-            logging.error("action: consulta_ganadores | result: fail | error: agencias_no_finalizadas")
+        if len(self._finished_agencies) < int(self._agency_count):
+            logging.error("action: consulta_ganadores | result: in_progress | error: agencias_no_finalizadas")
             self.__send_client_results_not_ready_message(client_sock)
             return
+
+        if not self._lottery_done:
+            self._lottery_done = True
+            logging.info("action: sorteo | result: success")
 
         msg_lines = msg.splitlines()
         msg_header = msg_lines[0]
@@ -164,7 +169,6 @@ class Server:
         )
 
         self.__send_client_results_success_message(client_sock, won_bets_count)
-        logging.info(f'action: consulta_ganadores | result: success | agencia: {agency_number} | cant_ganadores:: {won_bets_count}')
 
     def __handle_client_connection(self, client_sock):
         """
