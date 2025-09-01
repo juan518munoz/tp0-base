@@ -5,24 +5,53 @@
 - Los mensajes enviados por el cliente al servidor se consideran "completos" cuando se recibe un carácter nulo (`\0`).
 - Los mensajes enviados por el servidor al cliente se consideran "completos" cuando se recibe un salto de línea (`\n`).
 
-## Formato mensaje de apuesta (de cliente a servidor)
+## Tipos de mensajes
+Existen tres tipos de mensajes que el cliente le puede enviar al servidor.
 
-```
-1,3
-Santiago Lionel,Lorca,12345678,1990-03-17,7574
-Ana María,Gómez,23456789,1985-05-22,1234
-Carlos,Fernández,34567890,1992-11-09,5678\0
-```
-El formato comienza con el ID de la agencia y la cantidad de apuestas, seguido por cada apuesta en líneas separadas.
-
-## Formato mensaje de respuesta (de servidor a cliente)
-```
-OK/n
+### Envio de apuestas
+```csv
+BETS,<agency_id>,<bet_count>
+<FirstName>,<LastName>,<Document>,<Birthdate>,<Number>
+<FirstName>,<LastName>,<Document>,<Birthdate>,<Number>
+...
+<FirstName>,<LastName>,<Document>,<Birthdate>,<Number>
 ```
 
-En caso de error:
-```
-FAIL,<error_message>/n
+**El servidor recibe este mensaje, en caso de que todas las apuestas enviadas sean validas y las almacena correctamente, responde con:**
+```csv
+OK
 ```
 
-> El formato de respuesta puede que sea modificado para puntos posteriores, ya que no es necesario para la consigna actual que tenga más información.
+**Caso contrario, el error será notificado con el mensaje:**
+```csv
+FAIL,<error_msg>
+```
+
+### Envio notificación finalización de apuestas
+```csv
+FINISHED,<agency_id>
+```
+
+El servidor responde al cliente de la misma forma que con el envio de respuestas.
+
+### Consulta resultados
+```csv
+RESULTS,<agency_id>
+```
+
+La respuesta del servidor depende de si el sorteo ya ha sido realizado.
+
+**Si ya fue realizado:**
+```csv
+OK,<won_bets_count>
+```
+
+**Si aun hay agencias pendientes a finalizar:**
+```csv
+FAIL,NOT_READY
+```
+
+**Si la agencia solicitada no es valida:**
+```csv
+FAIL,INVALID_INPUT
+```
