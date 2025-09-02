@@ -1,6 +1,7 @@
 import socket
 import logging
 import signal
+import multiprocessing
 
 from common.utils import has_won, load_bets, parse_batch_bets, recv_until_null, store_bets
 
@@ -19,8 +20,10 @@ class Server:
         signal.signal(signal.SIGINT, self._signal_handler)
         signal.signal(signal.SIGTERM, self._signal_handler)
         self._agency_count = agency_count
-        self._finished_agencies = []
-        self._lottery_done = False
+        manager = multiprocessing.Manager()
+        self._finished_agencies = manager.list()
+        self._lottery_done = manager.Value('b', False) # boolean value
+        self._storage_lock = manager.Lock()
 
     def _signal_handler(self, signum, frame):
         logging.info(f"action: received_signal | result: in_progress | signal: {signum}")
@@ -39,7 +42,14 @@ class Server:
             while self._running:
                 try:
                     client_sock = self.__accept_new_connection()
-                    self.__handle_client_connection(client_sock)
+                    p = multiprocessing.Process(
+                        target=self.__handle_client_connection,
+                        args=(client_sock,)
+                    )
+                    p.daemon = True # Terminate if the main process ends
+                    p.start()
+
+                    client_sock.close() # Close the main process copy of the socket
                 except socket.timeout:
                     continue
         finally:
@@ -72,8 +82,8 @@ class Server:
         try:
             # Parse msg as Bet using CSV format
             bets = parse_batch_bets(msg)
-            # Store bets
-            store_bets(bets)
+            with self._storage_lock:
+                store_bets(bets)
             logging.info(f'action: apuesta_recibida | result: success | cantidad: {len(bets)}')
 
             # Notify client that bet was stored successfully
@@ -163,10 +173,11 @@ class Server:
             return
 
         agency_number = int(msg_header_parts[1])
-        won_bets_count = sum(
-            1 for bet in load_bets()
-            if bet.agency == agency_number and has_won(bet)
-        )
+        with self._storage_lock:
+            won_bets_count = sum(
+                1 for bet in load_bets()
+                if bet.agency == agency_number and has_won(bet)
+            )
 
         self.__send_client_results_success_message(client_sock, won_bets_count)
 
