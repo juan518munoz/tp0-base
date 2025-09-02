@@ -20,6 +20,7 @@ class Server:
         signal.signal(signal.SIGINT, self._signal_handler)
         signal.signal(signal.SIGTERM, self._signal_handler)
         self._agency_count = agency_count
+        # Shared state between processes
         manager = multiprocessing.Manager()
         self._finished_agencies = manager.list()
         self._lottery_done = manager.Value('b', False) # boolean value
