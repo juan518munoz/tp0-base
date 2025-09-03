@@ -202,3 +202,29 @@ Ejecutar `make docker-compose-up` nos levanta un entorno con un servidor y tres 
  ✔ Container client1        Started                                                                                     0.3s
  ✔ Container client2        Started                                                                                     0.3s
 ```
+
+## Ejercicio 2
+
+Generar nuevamente un archivo de docker compose, y correrlo:
+```bash
+./generar-compose.sh docker-compose-dev.yaml 1
+make docker-compose-up
+```
+
+Verificar que el log inicial del cliente:
+```bash
+2025-09-03 22:51:50 INFO     action: config | result: success | client_id: 1 | server_address: server:12345 | loop_amount: 5 | loop_period: 5s | log_level: INFO
+```
+
+Luego, modificar `client/config.yaml`, cambiando `loop_amount` de `5` a `10`, y correr nuevamente el entorno:
+```bash
+make docker-compose-down
+make docker-compose-up-no-build
+```
+
+Nuevamente, verificar el log inicial del cliente:
+```bash
+2025-09-03 22:51:50 INFO     action: config | result: success | client_id: 1 | server_address: server:12345 | loop_amount: 10 | loop_period: 5s | log_level: INFO
+```
+
+> El comando `make docker-compose-up-no-build` fue agregado para facilitar la demostración de este ejercicio.
