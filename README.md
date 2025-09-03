@@ -259,3 +259,47 @@ action: test_echo_server | result: fail
 ```
 
 > El comando `make docker-compose-stop` fue agregado para facilitar la demostración de este ejercicio.
+
+## Ejercicio 4
+
+Levantar un entorno con un servidor y un cliente:
+```bash
+./generar-compose.sh docker-compose-dev.yaml 1
+make docker-compose-up
+```
+
+Luego, detener el servidor y verificar su valor de salida:
+```bash
+docker stop server && docker wait server
+```
+
+Output esperado:
+```bash
+server
+0
+```
+
+De la misma forma, detener el cliente y verificar su valor de salida:
+```bash
+docker stop client1 && docker wait client1
+```
+
+Output esperado:
+```bash
+client1
+0
+```
+
+# Manejo de concurrencia
+
+## Cliente
+
+El cliente tiene dos `goroutines`:
+
+- Una rutina principal, que se carga de cargar la configuración, iniciar la otra rutina, y esperar a que esta termine o la señal de corte sea recibida.
+- Una rutina de envio de apuestas, que se encarga de la comunicación con el servidor. En cada iteración del loop, valida que la señal de corte no haya sido recibida, y en caso contrario, envía la apuesta al servidor.
+
+Elementos del lenguaje utilizados:
+- [`os/signal`](https://pkg.go.dev/os/signal)
+- [`chan`](https://go.dev/tour/concurrency/2)
+- [`goroutines`](https://gobyexample.com/goroutines)
