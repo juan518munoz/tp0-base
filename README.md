@@ -178,3 +178,84 @@ Se espera que se redacte una sección del README en donde se indique cómo ejecu
 Se proveen [pruebas automáticas](https://github.com/7574-sistemas-distribuidos/tp0-tests) de caja negra. Se exige que la resolución de los ejercicios pase tales pruebas, o en su defecto que las discrepancias sean justificadas y discutidas con los docentes antes del día de la entrega. El incumplimiento de las pruebas es condición de desaprobación, pero su cumplimiento no es suficiente para la aprobación. Respetar las entradas de log planteadas en los ejercicios, pues son las que se chequean en cada uno de los tests.
 
 La corrección personal tendrá en cuenta la calidad del código entregado y casos de error posibles, se manifiesten o no durante la ejecución del trabajo práctico. Se pide a los alumnos leer atentamente y **tener en cuenta** los criterios de corrección informados  [en el campus](https://campusgrado.fi.uba.ar/mod/page/view.php?id=73393).
+
+# Entrega
+
+## Ejercicio 1
+
+Probar la creación del docker compose con 3 clientes:
+```bash
+./generar-compose.sh docker-compose-dev.yaml 3
+```
+
+Output esperado:
+```bash
+Archivo 'docker-compose-dev.yaml' creado exitosamente con 3 clientes.
+```
+
+Ejecutar `make docker-compose-up` nos levanta un entorno con un servidor y tres clientes:
+```bash
+[+] Running 5/5
+ ✔ Network tp0_testing_net  Created                                                                                     0.0s
+ ✔ Container server         Started                                                                                     0.2s
+ ✔ Container client3        Started                                                                                     0.3s
+ ✔ Container client1        Started                                                                                     0.3s
+ ✔ Container client2        Started                                                                                     0.3s
+```
+
+## Ejercicio 2
+
+Generar nuevamente un archivo de docker compose, y correrlo:
+```bash
+./generar-compose.sh docker-compose-dev.yaml 1
+make docker-compose-up
+```
+
+Verificar que el log inicial del cliente:
+```bash
+2025-09-03 22:51:50 INFO     action: config | result: success | client_id: 1 | server_address: server:12345 | loop_amount: 5 | loop_period: 5s | log_level: INFO
+```
+
+Luego, modificar `client/config.yaml`, cambiando `loop_amount` de `5` a `10`, y correr nuevamente el entorno:
+```bash
+make docker-compose-down
+make docker-compose-up-no-build
+```
+
+Nuevamente, verificar el log inicial del cliente:
+```bash
+2025-09-03 22:51:50 INFO     action: config | result: success | client_id: 1 | server_address: server:12345 | loop_amount: 10 | loop_period: 5s | log_level: INFO
+```
+
+> El comando `make docker-compose-up-no-build` fue agregado para facilitar la demostración de este ejercicio.
+
+## Ejercicio 3
+
+Generar, y levantar un entorno con un servidor:
+```bash
+./generar-compose.sh docker-compose-dev.yaml 1
+make docker-compose-up
+```
+
+Verificar que el servidor esté corriendo:
+```bash
+./validar-echo-server.sh
+```
+
+Output esperado:
+```bash
+action: test_echo_server | result: success
+```
+
+Luego, detener el entorno, y volver a correr el script de validación:
+```bash
+make docker-compose-stop
+./validar-echo-server.sh
+```
+
+Output esperado:
+```bash
+action: test_echo_server | result: fail
+```
+
+> El comando `make docker-compose-stop` fue agregado para facilitar la demostración de este ejercicio.
