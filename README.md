@@ -228,3 +228,34 @@ Nuevamente, verificar el log inicial del cliente:
 ```
 
 > El comando `make docker-compose-up-no-build` fue agregado para facilitar la demostración de este ejercicio.
+
+## Ejercicio 3
+
+Generar, y levantar un entorno con un servidor:
+```bash
+./generar-compose.sh docker-compose-dev.yaml 1
+make docker-compose-up
+```
+
+Verificar que el servidor esté corriendo:
+```bash
+./validar-echo-server.sh
+```
+
+Output esperado:
+```bash
+action: test_echo_server | result: success
+```
+
+Luego, detener el entorno, y volver a correr el script de validación:
+```bash
+make docker-compose-stop
+./validar-echo-server.sh
+```
+
+Output esperado:
+```bash
+action: test_echo_server | result: fail
+```
+
+> El comando `make docker-compose-stop` fue agregado para facilitar la demostración de este ejercicio.
