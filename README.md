@@ -316,6 +316,24 @@ server   | 2025-09-03 23:14:44 INFO     action: apuesta_almacenada | result: suc
 server   | 2025-09-03 23:14:44 INFO     action: accept_connections | result: in_progress
 ```
 
+## Ejercicio 6
+
+Descomprimir los el archivo `.zip` del directorio `.data`:
+```bash
+unzip .data/dataset.zip -d .data/
+```
+
+Luego, repetir los pasos del ejercicio 5, y verificar los logs de ambos clientes y del servidor.
+
+Output (aproximado) esperado:
+```bash
+...
+server   | 2025-09-03 23:23:18 INFO     action: apuesta_recibida | result: success | cantidad: 160
+...
+```
+
+> Se omiten los otros logs por su extensión.
+
 # Manejo de concurrencia
 
 ## Cliente
