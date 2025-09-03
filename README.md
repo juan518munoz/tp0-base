@@ -290,6 +290,32 @@ client1
 0
 ```
 
+## Ejercicio 5
+
+Levantar y ejecutar un nuevo entorno:
+```bash
+./generar-compose.sh docker-compose-dev.yaml 2
+make docker-compose-up
+```
+
+Luego, verificar los logs de ambos clientes y del servidor:
+```bash
+make docker-compose-logs
+```
+
+Output (aproximado) esperado:
+```bash
+client2  | 2025-09-03 23:16:22 INFO     action: config | result: success | client_id: 2 | server_address: server:12345 | loop_amount: 5 | loop_period: 5s | log_level: INFO | bet_firstName: PEPE | bet_lastName: LOPEZ | bet_document: 12345678 | bet_birthdate: 1990-03-17 | bet_number: 7574
+client2  | 2025-09-03 23:16:22 INFO     action: apuesta_enviada | result: success | dni: 12345678 | numero: 12345678
+client1  | 2025-09-03 23:14:44 INFO     action: config | result: success | client_id: 1 | server_address: server:12345 | loop_amount: 5 | loop_period: 5s | log_level: INFO | bet_firstName: PEPE | bet_lastName: LOPEZ | bet_document: 12345678 | bet_birthdate: 1990-03-17 | bet_number: 7574
+client1  | 2025-09-03 23:14:44 INFO     action: apuesta_enviada | result: success | dni: 12345678 | numero: 12345678
+server   | 2025-09-03 23:14:44 INFO     action: accept_connections | result: in_progress
+server   | 2025-09-03 23:14:44 INFO     action: accept_connections | result: success | ip: 172.25.125.3
+server   | 2025-09-03 23:14:44 INFO     action: receive_message | result: success | ip: 172.25.125.3 | msg: 1,PEPE,LOPEZ,12345678,1990-03-17,7574
+server   | 2025-09-03 23:14:44 INFO     action: apuesta_almacenada | result: success | dni: 12345678 | numero: 7574
+server   | 2025-09-03 23:14:44 INFO     action: accept_connections | result: in_progress
+```
+
 # Manejo de concurrencia
 
 ## Cliente
@@ -303,3 +329,7 @@ Elementos del lenguaje utilizados:
 - [`os/signal`](https://pkg.go.dev/os/signal)
 - [`chan`](https://go.dev/tour/concurrency/2)
 - [`goroutines`](https://gobyexample.com/goroutines)
+
+# Protocolo de comunicación
+
+Disponible en [`Communication.md`](./Communication.md)
