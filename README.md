@@ -387,6 +387,10 @@ client2  | 2025-09-03 23:27:23 INFO     action: consulta_ganadores | result: suc
 
 > Notar que todos los clientes, salvo el `client2`, realizan la consulta más de una vez, debido a que las demas agencias aun no han finalizado el envío de sus apuestas (y su notificación posterior).
 
+## Ejercicio 8
+
+El ejercicio 8 no tiene pasos adicionales a los del ejercicio 7. Se puede notar en los logs del servidor que las conexiones son aceptadas en paralelo
+
 # Manejo de concurrencia
 
 ## Cliente
@@ -395,6 +399,17 @@ El cliente tiene dos `goroutines`:
 
 - Una rutina principal, que se carga de cargar la configuración, iniciar la otra rutina, y esperar a que esta termine o la señal de corte sea recibida.
 - Una rutina de envio de apuestas, que se encarga de la comunicación con el servidor. En cada iteración del loop, valida que la señal de corte no haya sido recibida, y en caso contrario, envía la apuesta al servidor.
+
+## Servidor
+
+El servidor maneja la concurrencia utilizando la [librería `multiprocessing` de Python](https://docs.python.org/3/library/multiprocessing.html). Los elementos utilizados son:
+
+- `Process`: para crear un nuevo proceso por cada conexión entrante.
+- `Lock`: para prohibir el acceso simultáneo a la función `store_bets()` y `load_bets()`, las cuales no son _thread-safe_.
+- `Manager.list()`: para crear una lista compartida entre procesos, en la cual se almacenan las notificaciones de finalización recibidas por los clientes.
+- `Manager.Value()`: un booleano compartido entre procesos, que indica si el sorteo ya fue realizado.
+
+> Los procesos son configurados con la variable `daemon=True`, para que terminen automáticamente al finalizar el proceso principal.
 
 Elementos del lenguaje utilizados:
 - [`os/signal`](https://pkg.go.dev/os/signal)
