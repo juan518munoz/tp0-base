@@ -178,3 +178,176 @@ Se espera que se redacte una sección del README en donde se indique cómo ejecu
 Se proveen [pruebas automáticas](https://github.com/7574-sistemas-distribuidos/tp0-tests) de caja negra. Se exige que la resolución de los ejercicios pase tales pruebas, o en su defecto que las discrepancias sean justificadas y discutidas con los docentes antes del día de la entrega. El incumplimiento de las pruebas es condición de desaprobación, pero su cumplimiento no es suficiente para la aprobación. Respetar las entradas de log planteadas en los ejercicios, pues son las que se chequean en cada uno de los tests.
 
 La corrección personal tendrá en cuenta la calidad del código entregado y casos de error posibles, se manifiesten o no durante la ejecución del trabajo práctico. Se pide a los alumnos leer atentamente y **tener en cuenta** los criterios de corrección informados  [en el campus](https://campusgrado.fi.uba.ar/mod/page/view.php?id=73393).
+
+# Entrega
+
+## Ejercicio 1
+
+Probar la creación del docker compose con 3 clientes:
+```bash
+./generar-compose.sh docker-compose-dev.yaml 3
+```
+
+Output esperado:
+```bash
+Archivo 'docker-compose-dev.yaml' creado exitosamente con 3 clientes.
+```
+
+Ejecutar `make docker-compose-up` nos levanta un entorno con un servidor y tres clientes:
+```bash
+[+] Running 5/5
+ ✔ Network tp0_testing_net  Created                                                                                     0.0s
+ ✔ Container server         Started                                                                                     0.2s
+ ✔ Container client3        Started                                                                                     0.3s
+ ✔ Container client1        Started                                                                                     0.3s
+ ✔ Container client2        Started                                                                                     0.3s
+```
+
+## Ejercicio 2
+
+Generar nuevamente un archivo de docker compose, y correrlo:
+```bash
+./generar-compose.sh docker-compose-dev.yaml 1
+make docker-compose-up
+```
+
+Verificar que el log inicial del cliente:
+```bash
+2025-09-03 22:51:50 INFO     action: config | result: success | client_id: 1 | server_address: server:12345 | loop_amount: 5 | loop_period: 5s | log_level: INFO
+```
+
+Luego, modificar `client/config.yaml`, cambiando `loop_amount` de `5` a `10`, y correr nuevamente el entorno:
+```bash
+make docker-compose-down
+make docker-compose-up-no-build
+```
+
+Nuevamente, verificar el log inicial del cliente:
+```bash
+2025-09-03 22:51:50 INFO     action: config | result: success | client_id: 1 | server_address: server:12345 | loop_amount: 10 | loop_period: 5s | log_level: INFO
+```
+
+> El comando `make docker-compose-up-no-build` fue agregado para facilitar la demostración de este ejercicio.
+
+## Ejercicio 3
+
+Generar, y levantar un entorno con un servidor:
+```bash
+./generar-compose.sh docker-compose-dev.yaml 1
+make docker-compose-up
+```
+
+Verificar que el servidor esté corriendo:
+```bash
+./validar-echo-server.sh
+```
+
+Output esperado:
+```bash
+action: test_echo_server | result: success
+```
+
+Luego, detener el entorno, y volver a correr el script de validación:
+```bash
+make docker-compose-stop
+./validar-echo-server.sh
+```
+
+Output esperado:
+```bash
+action: test_echo_server | result: fail
+```
+
+> El comando `make docker-compose-stop` fue agregado para facilitar la demostración de este ejercicio.
+
+## Ejercicio 4
+
+Levantar un entorno con un servidor y un cliente:
+```bash
+./generar-compose.sh docker-compose-dev.yaml 1
+make docker-compose-up
+```
+
+Luego, detener el servidor y verificar su valor de salida:
+```bash
+docker stop server && docker wait server
+```
+
+Output esperado:
+```bash
+server
+0
+```
+
+De la misma forma, detener el cliente y verificar su valor de salida:
+```bash
+docker stop client1 && docker wait client1
+```
+
+Output esperado:
+```bash
+client1
+0
+```
+
+## Ejercicio 5
+
+Levantar y ejecutar un nuevo entorno:
+```bash
+./generar-compose.sh docker-compose-dev.yaml 2
+make docker-compose-up
+```
+
+Luego, verificar los logs de ambos clientes y del servidor:
+```bash
+make docker-compose-logs
+```
+
+Output (aproximado) esperado:
+```bash
+client2  | 2025-09-03 23:16:22 INFO     action: config | result: success | client_id: 2 | server_address: server:12345 | loop_amount: 5 | loop_period: 5s | log_level: INFO | bet_firstName: PEPE | bet_lastName: LOPEZ | bet_document: 12345678 | bet_birthdate: 1990-03-17 | bet_number: 7574
+client2  | 2025-09-03 23:16:22 INFO     action: apuesta_enviada | result: success | dni: 12345678 | numero: 12345678
+client1  | 2025-09-03 23:14:44 INFO     action: config | result: success | client_id: 1 | server_address: server:12345 | loop_amount: 5 | loop_period: 5s | log_level: INFO | bet_firstName: PEPE | bet_lastName: LOPEZ | bet_document: 12345678 | bet_birthdate: 1990-03-17 | bet_number: 7574
+client1  | 2025-09-03 23:14:44 INFO     action: apuesta_enviada | result: success | dni: 12345678 | numero: 12345678
+server   | 2025-09-03 23:14:44 INFO     action: accept_connections | result: in_progress
+server   | 2025-09-03 23:14:44 INFO     action: accept_connections | result: success | ip: 172.25.125.3
+server   | 2025-09-03 23:14:44 INFO     action: receive_message | result: success | ip: 172.25.125.3 | msg: 1,PEPE,LOPEZ,12345678,1990-03-17,7574
+server   | 2025-09-03 23:14:44 INFO     action: apuesta_almacenada | result: success | dni: 12345678 | numero: 7574
+server   | 2025-09-03 23:14:44 INFO     action: accept_connections | result: in_progress
+```
+
+## Ejercicio 6
+
+Descomprimir los el archivo `.zip` del directorio `.data`:
+```bash
+unzip .data/dataset.zip -d .data/
+```
+
+Luego, repetir los pasos del ejercicio 5, y verificar los logs de ambos clientes y del servidor.
+
+Output (aproximado) esperado:
+```bash
+...
+server   | 2025-09-03 23:23:18 INFO     action: apuesta_recibida | result: success | cantidad: 160
+...
+```
+
+> Se omiten los otros logs por su extensión.
+
+# Manejo de concurrencia
+
+## Cliente
+
+El cliente tiene dos `goroutines`:
+
+- Una rutina principal, que se carga de cargar la configuración, iniciar la otra rutina, y esperar a que esta termine o la señal de corte sea recibida.
+- Una rutina de envio de apuestas, que se encarga de la comunicación con el servidor. En cada iteración del loop, valida que la señal de corte no haya sido recibida, y en caso contrario, envía la apuesta al servidor.
+
+Elementos del lenguaje utilizados:
+- [`os/signal`](https://pkg.go.dev/os/signal)
+- [`chan`](https://go.dev/tour/concurrency/2)
+- [`goroutines`](https://gobyexample.com/goroutines)
+
+# Protocolo de comunicación
+
+Disponible en [`Communication.md`](./Communication.md)
