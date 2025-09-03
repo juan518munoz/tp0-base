@@ -334,6 +334,59 @@ server   | 2025-09-03 23:23:18 INFO     action: apuesta_recibida | result: succe
 
 > Se omiten los otros logs por su extensión.
 
+## Ejercicio 7
+
+Repetir los pasos del ejercicio 6, y verificar los logs de ambos clientes y del servidor. Esta vez, , y que los clientes estén consultando los ganadores.
+
+Verificar que el servidor es notificado:
+```bash
+make docker-compose-logs | grep finalizacion
+```
+
+Output (aproximado) esperado:
+```bash
+client5  | 2025-09-03 23:27:23 INFO     action: notificacion_finalizacion | result: success
+client4  | 2025-09-03 23:27:23 INFO     action: notificacion_finalizacion | result: success
+client3  | 2025-09-03 23:27:23 INFO     action: notificacion_finalizacion | result: success
+client2  | 2025-09-03 23:27:23 INFO     action: notificacion_finalizacion | result: success
+client1  | 2025-09-03 23:27:23 INFO     action: notificacion_finalizacion | result: success
+```
+
+Luego realiza el sorteo:
+```bash
+make docker-compose-logs | grep sorteo
+```
+
+Output esperado:
+```bash
+server   | 2025-09-03 23:27:23 INFO     action: sorteo | result: success
+```
+
+Y finalmente, verificar que los clientes consultan los ganadores:
+```bash
+make docker-compose-logs | grep ganadores
+```
+
+Output (aproximado) esperado:
+```bash
+client1  | 2025-09-03 23:27:23 INFO     action: consulta_ganadores | result: in_progress
+client1  | 2025-09-03 23:27:25 INFO     action: consulta_ganadores | result: in_progress
+client1  | 2025-09-03 23:27:25 INFO     action: consulta_ganadores | result: success | cant_ganadores:  2
+client4  | 2025-09-03 23:27:23 INFO     action: consulta_ganadores | result: in_progress
+client4  | 2025-09-03 23:27:25 INFO     action: consulta_ganadores | result: in_progress
+client4  | 2025-09-03 23:27:25 INFO     action: consulta_ganadores | result: success | cant_ganadores:  2
+client5  | 2025-09-03 23:27:23 INFO     action: consulta_ganadores | result: in_progress
+client5  | 2025-09-03 23:27:25 INFO     action: consulta_ganadores | result: in_progress
+client5  | 2025-09-03 23:27:25 INFO     action: consulta_ganadores | result: success | cant_ganadores:  0
+client3  | 2025-09-03 23:27:23 INFO     action: consulta_ganadores | result: in_progress
+client3  | 2025-09-03 23:27:25 INFO     action: consulta_ganadores | result: in_progress
+client3  | 2025-09-03 23:27:25 INFO     action: consulta_ganadores | result: success | cant_ganadores:  3
+client2  | 2025-09-03 23:27:23 INFO     action: consulta_ganadores | result: in_progress
+client2  | 2025-09-03 23:27:23 INFO     action: consulta_ganadores | result: success | cant_ganadores:  3
+```
+
+> Notar que todos los clientes, salvo el `client2`, realizan la consulta más de una vez, debido a que las demas agencias aun no han finalizado el envío de sus apuestas (y su notificación posterior).
+
 # Manejo de concurrencia
 
 ## Cliente
