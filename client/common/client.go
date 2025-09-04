@@ -62,33 +62,30 @@ func (c *Client) createClientSocket() error {
 	return nil
 }
 
-// LoadBetsFromCSV loads all bets from the CSV file
-func LoadBetsFromCSV(filepath string) ([]Bet, error) {
-	file, err := os.Open(filepath)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-
-	reader := csv.NewReader(file)
+// ReadBetBatch reads a batch of bets from the CSV file
+// It returns the bets read, whether this is the end of file, and any error
+func ReadBetBatch(reader *csv.Reader, batchSize int) ([]Bet, bool, error) {
 	var bets []Bet
-	for {
+	isEOF := false
+
+	for i := 0; i < batchSize; i++ {
 		record, err := reader.Read()
 		if err == io.EOF {
+			isEOF = true
 			break
 		}
 		if err != nil {
-			return nil, err
+			return nil, false, err
 		}
 
 		// CSV format: FirstName,LastName,Document,Birthdate,Number
 		if len(record) < 5 {
-			return nil, fmt.Errorf("invalid CSV record: %v", record)
+			return nil, false, fmt.Errorf("invalid CSV record: %v", record)
 		}
 
 		number, err := strconv.ParseUint(record[4], 10, 32)
 		if err != nil {
-			return nil, fmt.Errorf("invalid number in CSV: %s", record[4])
+			return nil, false, fmt.Errorf("invalid number in CSV: %s", record[4])
 		}
 
 		bet := Bet{
@@ -101,7 +98,7 @@ func LoadBetsFromCSV(filepath string) ([]Bet, error) {
 		bets = append(bets, bet)
 	}
 
-	return bets, nil
+	return bets, isEOF, nil
 }
 
 // SendBatchBets sends multiple bets to the server in a single batch
@@ -145,14 +142,19 @@ func (c *Client) SendBatchBets(bets []Bet) error {
 }
 
 func SendBets(c *Client) error {
-	bets, err := LoadBetsFromCSV("/data/agency.csv")
+	// Open the CSV file
+	file, err := os.Open("/data/agency.csv")
 	if err != nil {
 		return err
 	}
+	defer file.Close()
 
-	// Process bets in batches
+	// Create CSV reader
+	reader := csv.NewReader(file)
 	batchSize := c.config.BatchMaxAmount
-	for i := 0; i < len(bets); i += batchSize {
+
+	// Read & send bets in batches
+	for {
 		// Check if shutdown signal has been received
 		select {
 		case <-c.shutdown:
@@ -161,22 +163,24 @@ func SendBets(c *Client) error {
 			// continue execution
 		}
 
-		// Calculate end index for current batch
-		end := i + batchSize
-		if end > len(bets) {
-			end = len(bets)
-		}
-
-		// Get current batch
-		currentBatch := bets[i:end]
-
-		// Send batch
-		err = c.SendBatchBets(currentBatch)
+		// Read a batch of bets from the CSV file
+		bets, isEOF, err := ReadBetBatch(reader, batchSize)
 		if err != nil {
 			return err
 		}
 
-		log.Info("action: apuesta_enviada | result: success | cantidad: ", len(currentBatch))
+		if len(bets) > 0 {
+			err = c.SendBatchBets(bets)
+			if err != nil {
+				return err
+			}
+			log.Info("action: apuesta_enviada | result: success | cantidad: ", len(bets))
+		}
+
+		// If we've reached the end of the file, we're done
+		if isEOF {
+			break
+		}
 	}
 
 	return nil
